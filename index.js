@@ -25,19 +25,27 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     const jobsCollection = client.db("Career_Code").collection("Jobs");
-
+    const applicationsCollection=client.db('Career_Code').collection('applications')
     // jobs Api
+    // Find all jobs 
     app.get("/jobs", async (req, res) => {
       const cursor = jobsCollection.find();
       const result = await cursor.toArray();
       res.send(result);
     });
+    // find a job
     app.get('/jobs/:id', async(req,res)=>{
       const id =req.params.id;
       const query ={_id : new ObjectId(id)};
       const result = await jobsCollection.findOne(query);
       res.send(result)
 
+    })
+    // job application api
+    app.post('/applications',async(req,res)=>{
+      const application=req.body;
+      const result=await applicationsCollection.insertOne(application);
+      res.send(result);
     })
 
     // Send a ping to confirm a successful connection
