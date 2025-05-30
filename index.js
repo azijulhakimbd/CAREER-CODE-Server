@@ -25,38 +25,51 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     const jobsCollection = client.db("Career_Code").collection("Jobs");
-    const applicationsCollection=client.db('Career_Code').collection('applications')
+    const applicationsCollection = client
+      .db("Career_Code")
+      .collection("applications");
     // jobs Api
-    // Find all jobs 
+    // Find all jobs
     app.get("/jobs", async (req, res) => {
       const cursor = jobsCollection.find();
       const result = await cursor.toArray();
       res.send(result);
     });
     // find a job
-    app.get('/jobs/:id', async(req,res)=>{
-      const id =req.params.id;
-      const query ={_id : new ObjectId(id)};
+    app.get("/jobs/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
       const result = await jobsCollection.findOne(query);
-      res.send(result)
-
-    })
-    // Get applications
-    app.get('/applications',async(req,res)=>{
-      const email=req.query.email;
-      const query={
-        applicant:email
-      }
-      const result= await applicationsCollection.find(query).toArray();
       res.send(result);
-    } )
+    });
+    // Get applications
+    app.get("/applications", async (req, res) => {
+      const email = req.query.email;
+      const query = {
+        applicant: email,
+      };
+      const result = await applicationsCollection.find(query).toArray();
+      // bad way to aggregate data
+      for (const application of result) {
+        const jobId = application.jobId;
+        const jobQuery = { _id: new ObjectId(jobId) };
+        const job = await jobsCollection.findOne(jobQuery);
+        application.company = job.company;
+        application.title = job.title;
+        application.company_logo = job.company_logo;
+        application.applicationDeadline = job.applicationDeadline;
+        application.location = job.location;
+        application.category = job.category;
+      }
+      res.send(result);
+    });
 
     // job application api
-    app.post('/applications',async(req,res)=>{
-      const application=req.body;
-      const result=await applicationsCollection.insertOne(application);
+    app.post("/applications", async (req, res) => {
+      const application = req.body;
+      const result = await applicationsCollection.insertOne(application);
       res.send(result);
-    })
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
