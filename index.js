@@ -73,6 +73,14 @@ async function run() {
       res.send(result);
     });
 
+    // applications
+    app.get("/applications/job/:job_id", async (req, res) => {
+      const job_id = req.params.job_id;
+      const query = { jobId: job_id };
+      const result = await applicationsCollection.find(query).toArray();
+      res.send(result);
+    });
+
     // Get applications
     app.get("/applications", async (req, res) => {
       const email = req.query.email;
