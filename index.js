@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const app = express();
+const jwt = require("jsonwebtoken");
 const port = process.env.PORT || 3000;
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
@@ -23,18 +24,40 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+
     const jobsCollection = client.db("Career_Code").collection("Jobs");
     const applicationsCollection = client
       .db("Career_Code")
       .collection("applications");
-    // jobs Api
+
+    // JWT token
+    app.post("jwt", async (req, res) => {
+      const { email } = req.body;
+      const user = { email };
+      const token = jwt.sign(user, "secret", { expiresIn: "1h" });
+      res.send({ token });
+    });
+
     // Find all jobs
     app.get("/jobs", async (req, res) => {
-      const cursor = jobsCollection.find();
+      const email = req.query.email;
+      const query = {};
+      if (email) {
+        query.hr_email = email;
+      }
+      const cursor = jobsCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
     });
+
+    // // could be done but not be done
+    // app.get("/jobsByEmailAddress", async (req, res) => {
+    //   const email = req.query.email;
+    //   const query = { hrr_email: email };
+    //   const result = await jobsCollection.find(query).toArray();
+    //   res.send(result);
+    // });
+
     // find a job
     app.get("/jobs/:id", async (req, res) => {
       const id = req.params.id;
@@ -42,12 +65,13 @@ async function run() {
       const result = await jobsCollection.findOne(query);
       res.send(result);
     });
+
     // Add Job
-    app.post('/jobs',async(req,res)=>{
-      const newJob =req.body;
-      const result= await jobsCollection.insertOne(newJob);
-      res.send(result)
-    })
+    app.post("/jobs", async (req, res) => {
+      const newJob = req.body;
+      const result = await jobsCollection.insertOne(newJob);
+      res.send(result);
+    });
 
     // Get applications
     app.get("/applications", async (req, res) => {
@@ -56,6 +80,7 @@ async function run() {
         applicant: email,
       };
       const result = await applicationsCollection.find(query).toArray();
+
       // bad way to aggregate data
       for (const application of result) {
         const jobId = application.jobId;
@@ -79,7 +104,7 @@ async function run() {
     });
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
