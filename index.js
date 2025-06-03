@@ -30,7 +30,7 @@ async function run() {
       .db("Career_Code")
       .collection("applications");
 
-    // JWT token
+    // JWT token Create 
     app.post("jwt", async (req, res) => {
       const { email } = req.body;
       const user = { email };
